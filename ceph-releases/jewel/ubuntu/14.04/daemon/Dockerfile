@@ -7,6 +7,9 @@
 FROM ceph/base:tag-build-master-jewel-ubuntu-14.04
 MAINTAINER Sébastien Han "seb@redhat.com"
 
+RUN apt-get -y update
+RUN apt-get --no-install-recommends -qq -y install postfix sipcalc
+
 # Add templates for confd
 ADD ./confd/templates/* /etc/confd/templates/
 ADD ./confd/conf.d/* /etc/confd/conf.d/
