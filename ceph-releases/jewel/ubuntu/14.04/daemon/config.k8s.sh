@@ -20,8 +20,8 @@ function get_mon_config {
     INSERTED=$(curl -L -XGET http://172.19.1.11:4001/v2/keys/skydns/ceph/mon/`hostname | cut -d '-' -f3`/$i --head | grep "404" | wc -l)
   done;
 
-  curl -XPUT http://172.19.1.11:4001/v2/keys/skydns/cafecluster/svc/ceph/ceph-mon/x$i -d value='{\"host\":\"`hostname -I | cut -d' ' -f1`\"}'
-  curl -XPUT http://172.19.1.11:4001/v2/keys/skydns/arpa/in-addr/${HOSTIP1}/${HOSTIP2}/${HOSTIP3}/${HOSTIP4} -d value='{\"host\":\"`hostname`\"}'
+  curl -XPUT http://172.19.1.11:4001/v2/keys/skydns/cafecluster/svc/ceph/ceph-mon/x$i -d value='{"host":"`hostname -I | cut -d' ' -f1`"}'
+  curl -XPUT http://172.19.1.11:4001/v2/keys/skydns/arpa/in-addr/${HOSTIP1}/${HOSTIP2}/${HOSTIP3}/${HOSTIP4} -d value='{"host":"`hostname`"}'
 
 
   # Get FSID from ceph.conf
