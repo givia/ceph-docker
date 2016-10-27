@@ -8,20 +8,29 @@ function get_admin_key {
 
 function get_mon_config {
 
-  HOSTIP1=$(hostname -I | cut -d'.' -f1 | cut -d ' ' -f1)
-  HOSTIP2=$(hostname -I | cut -d'.' -f2 | cut -d ' ' -f1)
-  HOSTIP3=$(hostname -I | cut -d'.' -f3 | cut -d ' ' -f1)
-  HOSTIP4=$(hostname -I | cut -d'.' -f4 | cut -d ' ' -f1)
-
+  DEPLOYID=$(hostname | cut -d '-' -f3)
+  HOSTIP=$(hostname -I | cut -d' ' -f1)
+  HOSTNAME=$(hostname)
   i=0
   INSERTED="0"
-  while [ ${INSERTED} -lt 1 ]; do
+  HOSTIP1=$(echo ${HOSTIP} | cut -d'.' -f1 | cut -d ' ' -f1)
+  HOSTIP2=$(echo ${HOSTIP} | cut -d'.' -f2 | cut -d ' ' -f1)
+  HOSTIP3=$(echo $HOSTIP | cut -d'.' -f3 | cut -d ' ' -f1)
+  HOSTIP4=$(echo $HOSTIP | cut -d'.' -f4 | cut -d ' ' -f1)
+
+  etcdctl  --endpoint 172.19.1.11:4001 rm --dir=true --recursive=true /skydns/cafecluster/svc/ || true
+
+  curl -XPUT http://172.19.1.11:4001/v2/keys/skydns/arpa/in-addr/$HOSTIP1/$HOSTIP2/$HOSTIP3/$HOSTIP4 -d value="{\"host\":\"$HOSTNAME\"}"
+
+
+  for ep in $(kubectl get ep ceph-mon --namespace ceph -o template --template '{{range .subsets}}{{range .addresses}}{{.ip}} {{end}}{{end}}' | cut -d " " -f1-); do
     i=$(($i+1))
-    INSERTED=$(curl -L -XGET http://172.19.1.11:4001/v2/keys/skydns/ceph/mon/`hostname | cut -d '-' -f3`/$i --head | grep "404" | wc -l)
+    curl -XPUT http://172.19.1.11:4001/v2/keys/skydns/cafecluster/svc/ceph/ceph-mon/x${i} -d value="{\"host\":\"${ep}\"}"
   done;
 
-  curl -XPUT http://172.19.1.11:4001/v2/keys/skydns/cafecluster/svc/ceph/ceph-mon/x$i -d value='{"host":"`hostname -I | cut -d' ' -f1`"}'
-  curl -XPUT http://172.19.1.11:4001/v2/keys/skydns/arpa/in-addr/${HOSTIP1}/${HOSTIP2}/${HOSTIP3}/${HOSTIP4} -d value='{"host":"`hostname`"}'
+  echo "search ceph.svc.cafecluster svc.cafecluster cafecluster" > /etc/resolv.conf
+  echo "nameserver 172.19.1.11" >> /etc/resolv.conf
+  echo "options ndots:5" >> /etc/resolv.conf
 
 
   # Get FSID from ceph.conf
